@@ -1,6 +1,8 @@
 Cython LSTM
 -----------
+
 @author Jonathan Raiman
+@date 3rd November 2014
 
 See the current implementation [on this notebook](http://nbviewer.ipython.org/github/JonathanRaiman/cython_lstm/blob/master/Cython%20LSTM.ipynb).
 
@@ -10,15 +12,17 @@ See the current implementation [on this notebook](http://nbviewer.ipython.org/gi
 
 * Backprop over the network
 
-* Tanh, Logistic, Linear activations
+* Tanh, Logistic, Softmax, Linear activations
 
 * Recurrent Neural Networks (Hidden states only, no memory)
 
 * Backprop through time
 
-* Output graph of network to matplotlib ([see notebook](http://nbviewer.ipython.org/github/JonathanRaiman/cython_lstm/blob/master/Cython%20LSTM.ipynb))
+* Draw graph of network using matplotlib ([see notebook](http://nbviewer.ipython.org/github/JonathanRaiman/cython_lstm/blob/master/Cython%20LSTM.ipynb#drawing-the-network))
 
+* Training using SGD or batch gradient descent
 
+* Tensor networks (quadratic form connecting layers)
 
 ### Key design goals 
 
@@ -26,9 +30,9 @@ See the current implementation [on this notebook](http://nbviewer.ipython.org/gi
 
 * Model connections using matrices not explicit connections (to get vector algebra involved)
 
-* Be able to construct and run million parameter models for LSTM and RNN type models
+* Construct and run million parameter models for LSTM and RNN type models
 
-* Be able to do AdaGrad / RMSprop on gradients easily
+* Be able to run AdaGrad / RMSprop on gradients easily
 
 #### Icing on the cake
 
@@ -36,7 +40,7 @@ See the current implementation [on this notebook](http://nbviewer.ipython.org/gi
 
 * BackProp through structure
 
-* Variable input size indices for RNN
+* Variable input size indices for RNN (so batches of different sequence sizes can be run adjacent to one another -- currently difficult given numpy array size restrictions)
 
 * Language Models / Hiearchical Softmax parameters
 
