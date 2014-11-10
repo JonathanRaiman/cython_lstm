@@ -129,9 +129,9 @@ class RecurrentLayer(Layer):
         
     def _random_weight_matrix(self):
         return (1. / (self.input_size + self.output_size) *
-            np.random.randn(
+            np.random.standard_normal([
                 self.output_size,
-                self.input_size + self.output_size)
+                self.input_size + self.output_size])
         ).astype(self.dtype)
     
     def forward_propagate(self, input):

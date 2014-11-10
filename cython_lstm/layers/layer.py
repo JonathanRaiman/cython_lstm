@@ -2,7 +2,10 @@
 Neural Network Layer
 --------------------
 
-Missing: Dropout, Rectifier, Language Models, Hierachical Softmax
+Missing: Dropout, Language Models, Hierachical Softmax
+
+Note: it appears that Dropout is a weightless layer.
+Layer should be generalized to the weighless case.
 
 """
 from ..cython_utils import vector_outer_product, tensor_delta_down_with_output
@@ -165,24 +168,24 @@ class Layer():
     def _random_weight_tensor(self):
         return (
             (1. / self.input_size) *
-            np.random.randn(
+            np.random.standard_normal([
                 self.output_size,
                 self.input_size,
-                self.input_size)
+                self.input_size])
         ).astype(self.dtype)
         
     def _random_weight_matrix(self):
         return (
             (1. / self.input_size) *
-            np.random.randn(
+            np.random.standard_normal([
                 self.output_size,
-                self.input_size)
+                self.input_size])
         ).astype(self.dtype)
     
     def _random_bias_units(self):
         return (
             (1. / self.input_size) *
-            np.random.randn(self.output_size)
+            np.random.standard_normal(self.output_size)
         ).astype(self.dtype)
         
     def create_weights(self):

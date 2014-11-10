@@ -36,6 +36,16 @@ class Neuron():
         Mean squared error : 1/2 (y-t)^2
         """
         return 0.5 * (y - target)**2
+
+class RectifierNeuron(Neuron):
+    @staticmethod
+    def activation_function(x):
+        """Rectifier"""
+        return np.fmax(0,x)
+    
+    @staticmethod
+    def dydz(x):
+        return np.sign(x)
     
 class LogisticNeuron(Neuron):
     @staticmethod

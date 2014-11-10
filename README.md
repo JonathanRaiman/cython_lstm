@@ -12,7 +12,7 @@ See the current implementation [on this notebook](http://nbviewer.ipython.org/gi
 
 * Backprop over the network
 
-* Tanh, Logistic, Softmax, Linear activations
+* Tanh, Logistic, Softmax, Rectifier, Linear activations
 
 * Recurrent Neural Networks (Hidden states only, no memory)
 
