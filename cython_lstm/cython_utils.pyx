@@ -8,7 +8,7 @@ from scipy.linalg.blas import fblas
 
 REAL = np.float32
 ctypedef np.float32_t REAL_t
- 
+
 cdef int ONE = 1
 cdef REAL_t ONEF = <REAL_t>1.0
  
@@ -27,7 +27,6 @@ ctypedef float (*sdot_ptr) (const int *N, const float *X, const int *incX, const
 
 cdef sdot_ptr sdot=<sdot_ptr>PyCapsule_GetPointer(fblas.sdot._cpointer, NULL) # float = dot(x, y)
 cdef dgemv_ptr dgemv=<dgemv_ptr>PyCapsule_GetPointer(fblas.dgemv._cpointer, NULL)
-
 
 cpdef np.ndarray[REAL_t, ndim=3] vector_outer_product(np.ndarray[REAL_t, ndim=2] _x, np.ndarray[REAL_t, ndim=2] _y):
     
