@@ -29,27 +29,27 @@ class Layer():
                  tensor = False,
                  neuron = Neuron,
                  dtype=REAL):
-        self.dtype = dtype
+        self.dtype               = dtype
         self.activation_function = neuron.activation_function
-        self.error = neuron.error
-        self.dydz = neuron.dydz
-        self.dEdy = neuron.dEdy
-        self._weight_matrix = None
-        self._bias_units = None
-        self.input_size = input_size
-        self.output_size = output_size
+        self.error               = neuron.error
+        self.dydz                = neuron.dydz
+        self.dEdy                = neuron.dEdy
+        self._weight_matrix      = None
+        self._bias_units         = None
+        self.input_size          = input_size
+        self.output_size         = output_size
         
-        self._forward_layers = []
-        self._backward_layers = []
+        self._forward_layers     = []
+        self._backward_layers    = []
         
-        self.tensor = tensor
+        self.tensor              = tensor
         
-        self._activation = None
-        self._dEdy = None
-        self.dEdz = None
+        self._activation         = None
+        self._dEdy               = None
+        self.dEdz                = None
         
         self._weight_matrix_diff = None
-        self._bias_units_diff = None
+        self._bias_units_diff    = None
         
         if self.tensor:
             self._weight_tensor      = None
@@ -60,7 +60,7 @@ class Layer():
         
     def activate_forward_layers(self):
         for layer in self._forward_layers:
-            layer.activate(self._activation)
+            layer.activate(self.activation())
         
     def activate(self, input):
         # run net forward using input
@@ -139,7 +139,7 @@ class Layer():
         """
         
         # get the error here
-        self.backpropagate(self.dEdy(self._activation,target))
+        self.backpropagate(self.dEdy(self.activation(),target))
         
     def clear(self):
         """
@@ -253,18 +253,21 @@ class Layer():
     def remove_backward_layer(self, layer):
         self._backward_layers.remove(layer)
         
-    def connect_to(self, layer):
+    def connect_to(self, layer, trust = False):
         """
         Connect two layers together.
         """
-        if self.output_size == None:
-            self.output_size = layer.input_size
-            self.create_weights()
-            self._connect_layer(layer)
-        elif layer.input_size == self.output_size:
+        if trust:
             self._connect_layer(layer)
         else:
-            raise BaseException("Current layer's output size does not match input size for next layer")
+            if self.output_size == None:
+                self.output_size = layer.input_size
+                self.create_weights()
+                self._connect_layer(layer)
+            elif layer.input_size == self.output_size:
+                self._connect_layer(layer)
+            else:
+                raise BaseException("Current layer's output size does not match input size for next layer")
             
     def __repr__(self):
         return "<" + self.__class__.__name__ + " " + str({"activation": self.activation_function.__doc__, "input_size": self.input_size, "output_size": self.output_size})+">"

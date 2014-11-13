@@ -18,10 +18,42 @@ class RecurrentLayer(Layer):
     """
     def __init__(self, *args, **kwargs):
         self.step = 0
-        super(RecurrentLayer, self).__init__(*args, **kwargs)
+        self._temporal_backward_layers = []
+        self._temporal_forward_layers  = []
+        Layer.__init__(self, *args, **kwargs)
+        # connect to self
+
+    def connect_to(self, layer, temporal = False, **kwargs):
+        if temporal:
+            self.connect_through_time(layer)
+        else:
+            Layer.connect_to(self, layer, **kwargs)
+
+    def connect_through_time(self, layer):
+        self._temporal_forward_layers.append(layer)
+        layer.add_temporal_backward_layer(self)
+
+    def add_temporal_backward_layer(self, layer):
+        self._temporal_backward_layers.append(layer)
             
     def activation(self):
         return self._activation[self.step]
+
+    def allocate_activation(self, input):
+        print(self.__class__.__name__ + " is allocating memory for its activations.")
+        timesteps = input.shape[0]
+        self._activation = np.zeros([timesteps, input.shape[1], self.output_size] , dtype=self.dtype)
+
+    def allocate_temporal_forward_layers(self, input):
+        for layer in self._temporal_forward_layers:
+            layer.allocate_activation(input)
+
+    def activate_timestep(self, input):
+        if self.step < input.shape[0]:
+            self.forward_propagate(input[self.step])
+            self.step += 1
+            for layer in self._temporal_forward_layers:
+                layer.activate_timestep(self._activation)
             
     def activate(self, input):
         """
@@ -31,27 +63,14 @@ class RecurrentLayer(Layer):
         data.
         """
         # run net forward using input
-        timesteps = input.shape[0]
-        self._activation = np.zeros([timesteps, input.shape[1], self.output_size] , dtype=REAL)
-        for step in range(timesteps):
-            self.step = step
-            self.forward_propagate(input[step,:,:])
+        self.allocate_activation(input)
+        self.allocate_temporal_forward_layers(input)
+
+        self.step = 0
+        self.activate_timestep(input)
+
         # transfer activation as input to next layers:
         self.activate_forward_layers()
-        
-    def error_activate(self, target):
-        """
-        Start the backpropagation using a target
-        by getting the initial error responsability
-        as dE / dy = y - t
-        
-        dEdW is then provided for the backward layers
-        iteratively:
-        dE / dW  = (dy_l / dW) * (...) * (dy_l / dy) * (dE / dy)
-        """
-        
-        # get the error here
-        self.backpropagate(self.dEdy(self._activation[self.step],target))
             
     def layer_input(self):
         """
@@ -75,7 +94,7 @@ class RecurrentLayer(Layer):
             hidden = np.tile(self._initial_hidden_state, (observation.shape[0],1))
         else:
             # previous hidden state is concatenated with the current observation:
-            hidden = self._activation[self.step-1]
+            hidden = self._temporal_backward_layers[0]._activation[self.step-1]
           
         return np.concatenate([
                 hidden, # repeated hidden state
@@ -133,6 +152,14 @@ class RecurrentLayer(Layer):
                 self.output_size,
                 self.input_size + self.output_size])
         ).astype(self.dtype)
+
+    def _random_weight_tensor(self):
+        return (1. / (self.input_size + self.output_size) *
+            np.random.standard_normal([
+                self.output_size,
+                self.input_size + self.output_size,
+                self.input_size + self.output_size])
+        ).astype(self.dtype)
     
     def forward_propagate(self, input):
         """
@@ -164,7 +191,7 @@ class RecurrentLayer(Layer):
                 np.dot(x, self._weight_matrix.T) +
                 self._bias_units )
         return self._activation[self.step]
-    
+
     def backpropagate(self, signal):
         """
         Get local error responsability using
@@ -187,7 +214,7 @@ class RecurrentLayer(Layer):
             # with signal with derivative
             # take beginning part since remainder is attributable
             # to observation
-            self._dEdy = signal[:, 0:self.output_size] * self.dydz(self._activation[self.step,:,:])
+            self._dEdy = signal[:, 0:self.output_size] * self.dydz(self._activation[self.step])
             
             # given we know the error signal at this stage,
             # constitute the local error responsability dEdz
@@ -197,10 +224,3 @@ class RecurrentLayer(Layer):
             self.step -=1
             
             return self.backpropagate(self.dEdz)
-    
-    def activate_forward_layers(self):
-        """
-        Pass the last timestep activation forward
-        """
-        for layer in self._forward_layers:
-            layer.activate(self._activation[self.step])

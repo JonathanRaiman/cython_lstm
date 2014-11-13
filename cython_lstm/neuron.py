@@ -20,6 +20,7 @@ def softmax_error_one_hot(x, t):
 class Neuron():
     @staticmethod
     def activation_function(x):
+        """Identity"""
         return x
     
     @staticmethod
