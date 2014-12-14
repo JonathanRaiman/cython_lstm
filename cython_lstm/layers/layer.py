@@ -8,6 +8,7 @@ Note: it appears that Dropout is a weightless layer.
 Layer should be generalized to the weighless case.
 
 """
+from .base_layer import BaseLayer
 from ..cython_utils import vector_outer_product, tensor_delta_down_with_output
 from ..neuron import Neuron
 import numpy as np
@@ -19,7 +20,7 @@ def quadratic_form(tensor, x):
 def quadratic_form_gradient(error, x):
     return (vector_outer_product(x, x)[:,:,:, np.newaxis] * error).transpose((3,1,0,2))
 
-class Layer():
+class Layer(BaseLayer):
     """
     Create a feedforward layer with identity activation
     """
@@ -29,6 +30,9 @@ class Layer():
                  tensor = False,
                  neuron = Neuron,
                  dtype=REAL):
+        BaseLayer.__init__(self)
+        
+        self.step                = 0
         self.dtype               = dtype
         self.activation_function = neuron.activation_function
         self.error               = neuron.error
@@ -38,9 +42,6 @@ class Layer():
         self._bias_units         = None
         self.input_size          = input_size
         self.output_size         = output_size
-        
-        self._forward_layers     = []
-        self._backward_layers    = []
         
         self.tensor              = tensor
         
@@ -57,10 +58,6 @@ class Layer():
         
         if self.input_size is not None and self.output_size is not None:
             self.create_weights()
-        
-    def activate_forward_layers(self):
-        for layer in self._forward_layers:
-            layer.activate(self.activation())
         
     def activate(self, input):
         # run net forward using input
@@ -140,19 +137,21 @@ class Layer():
         
         # get the error here
         self.backpropagate(self.dEdy(self.activation(),target))
+
+    def clear_weight_caches(self):
+        for grad in self.gradients:
+            grad.fill(0)
         
     def clear(self):
         """
         Clears the activation and the local
         error responsibility for this layer
         """
+        self.step              = 0
         self._activation       = None
         self._dEdy             = None
         self.dEdz              = None
-        self._weight_matrix_diff.fill(0)
-        self._bias_units_diff.fill(0)
-        if self.tensor:
-            self._weight_tensor_diff.fill(0)
+        self.clear_weight_caches()
         
     def reset_weights(self):
         """
@@ -233,42 +232,7 @@ class Layer():
         else:
             self._activation = self.activation_function( np.dot(input, self._weight_matrix.T) + self._bias_units)
         return self._activation
-    
-    def _connect_layer(self, layer):
-        """
-        Adds the layer to the forward and
-        backward lists of layers to connect
-        the graph.
-        """
-        self._forward_layers.append(layer)
-        layer.add_backward_layer(self)
-        
-    def add_backward_layer(self, layer):
-        """
-        Connect a layer to the antecedents
-        of this layer in the graph.
-        """
-        self._backward_layers.append(layer)
-        
-    def remove_backward_layer(self, layer):
-        self._backward_layers.remove(layer)
-        
-    def connect_to(self, layer, trust = False):
-        """
-        Connect two layers together.
-        """
-        if trust:
-            self._connect_layer(layer)
-        else:
-            if self.output_size == None:
-                self.output_size = layer.input_size
-                self.create_weights()
-                self._connect_layer(layer)
-            elif layer.input_size == self.output_size:
-                self._connect_layer(layer)
-            else:
-                raise BaseException("Current layer's output size does not match input size for next layer")
-            
-    def __repr__(self):
-        return "<" + self.__class__.__name__ + " " + str({"activation": self.activation_function.__doc__, "input_size": self.input_size, "output_size": self.output_size})+">"
+
+    def _zero_initial_state(self):
+        return np.zeros(self.output_size, dtype=self.dtype)
 

@@ -4,10 +4,17 @@ import numpy as np
 REAL = np.float32
 
 class RecurrentMultiStageLayer(RecurrentLayer):
+    """
+    Wrapper around multiple temporal layers.
+    Handles the flow for forward and backward
+    propagation of signal.
+    
+    """
 
     def __init__(self, layers, dtype=REAL):
 
         self.step = 0
+
         self._temporal_backward_layers = []
         self._temporal_forward_layers  = []
         
@@ -34,8 +41,11 @@ class RecurrentMultiStageLayer(RecurrentLayer):
 
     def clear(self):
         """
+
         Clears the activation and the local
-        error responsibility for this layer
+        error responsibility for this layer,
+        and clears the internal layers too.
+
         """
         self.step              = 0
         self._dEdy             = None
@@ -63,6 +73,8 @@ class RecurrentMultiStageLayer(RecurrentLayer):
         pass
 
     def backpropagate(self, signal):
+        # todo : generalize so that all layers use backprop one step
+        # within backpropagate
         if self.step == -1:
             self.step = 0
             for layer in self._backward_layers:
@@ -73,9 +85,9 @@ class RecurrentMultiStageLayer(RecurrentLayer):
             self.step -= 1
             self.backpropagate(self.dEdz)
 
-    def allocate_activation(self, input):
+    def allocate_activation(self, timesteps, streams):
         for layer in self._internal_layers:
-            layer.allocate_activation(input)
+            layer.allocate_activation(timesteps, streams)
 
     def forward_propagate(self, input):
         self._internal_layers[0].activate(input)

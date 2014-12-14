@@ -7,17 +7,17 @@ class Network():
     """
     def __init__(self, dtype=REAL):
         self.dtype = dtype
-        self._layers = []
+        self.layers = []
         self._output_layer = None
         self._input_layer = None
         self._data_layer = DataLayer()
         
     def reset_weights(self):
-        for layer in self._layers:
+        for layer in self.layers:
             layer.reset_weights()
         
     def add_layer(self, layer, input=False, output = False):
-        self._layers.append(layer)
+        self.layers.append(layer)
         if input:
             self._input_layer = layer
             # connect the data layer to the first network
@@ -31,12 +31,17 @@ class Network():
             self._output_layer = layer
         
     def remove_layer(self, layer):
-        self._layers.remove(layer)
+        self.layers.remove(layer)
+
+    def allocate_activation(self, timesteps, streams):
+        for layer in self.layers:
+            layer.allocate_activation(timesteps, streams)
         
     def activate(self, input):
         input = np.asarray(input, dtype=self.dtype)
         if input.ndim == 1:
             input = input.reshape(1,-1)
+        self.allocate_activation(input.shape[0], input.shape[1])
         self._data_layer.activate(input)
         return self._output_layer._activation
         
@@ -55,7 +60,7 @@ class Network():
         Resets the state of the layers in this
         neural network
         """
-        for layer in self._layers:
+        for layer in self.layers:
             layer.clear()
             
     def get_parameters(self):
@@ -64,7 +69,7 @@ class Network():
         """
         
         parameters = []
-        for layer in self._layers:
+        for layer in self.layers:
             parameters.extend(layer.params)
         return parameters
     
@@ -73,16 +78,16 @@ class Network():
         Collect the gradients of the net into a list.
         """
         gradients = []
-        for layer in self._layers:
+        for layer in self.layers:
             gradients.extend(layer.gradients)
         return gradients
         
     def __repr__(self):
-        if len(self._layers) == 1:
-            return str({"layer":self._layers[0]})
+        if len(self.layers) == 1:
+            return str({"layer":self.layers[0]})
         else:
             return str({
-        "layers": self._layers,
+        "layers": self.layers,
         "output_layer": self._output_layer.activation_function.__doc__,
         "input_layer": self._input_layer.activation_function.__doc__
             })
@@ -104,7 +109,7 @@ class Network():
         layer_index = {}
         
         # add the units per layer
-        for layer_i, layer in enumerate(self._layers):
+        for layer_i, layer in enumerate(self.layers):
             layer_index[layer] = layer_i
 
             # add the nodes for this layer
@@ -128,13 +133,13 @@ class Network():
                     
             if layer is self._output_layer:
                 for i in range(layer.output_size):
-                    node = "%d_%d" % (len(self._layers), i)  # simple encoding of a node
+                    node = "%d_%d" % (len(self.layers), i)  # simple encoding of a node
                     graph.add_node(node)
                     outputted_units.append(node)
                     nodes_label[node] = r"$O_{%d}$" % i
-                    nodes_pos[node] = (len(self._layers), layer.output_size / 2.0 - i)
+                    nodes_pos[node] = (len(self.layers), layer.output_size / 2.0 - i)
         
-        for layer_i, layer in enumerate(self._layers):
+        for layer_i, layer in enumerate(self.layers):
             for forward_layer in layer._forward_layers:
                 graph.add_edges_from([
                     ("%d_%d" % (layer_i, k), "%d_%d" % (layer_index[forward_layer], l))
@@ -143,7 +148,7 @@ class Network():
             if layer is self._output_layer:
                 # map to fictional output nodes for net
                 graph.add_edges_from([
-                    ("%d_%d" % (layer_i, k), "%d_%d" % (len(self._layers), l))
+                    ("%d_%d" % (layer_i, k), "%d_%d" % (len(self.layers), l))
                     for k in range(layer.input_size) for l in range(layer.output_size)
                 ])
         
@@ -175,8 +180,8 @@ class Network():
                        node_color='#f2276e', node_size=470)
         ax.axis('off');
 
-        layer_sizes = [layer.input_size for layer in self._layers] + [self._output_layer.output_size]
-        activation_func = [layer.activation_function.__doc__ for layer in self._layers] + ["Output"]
+        layer_sizes = [layer.input_size for layer in self.layers] + [self._output_layer.output_size]
+        activation_func = [layer.activation_function.__doc__ for layer in self.layers] + ["Output"]
         max_heights_for_layer = [max([nodes_pos["%d_%d" % (k, node)][1]  for node in range(size)]) for k, size in enumerate(layer_sizes)]
 
         for i, layer_height in enumerate(max_heights_for_layer):

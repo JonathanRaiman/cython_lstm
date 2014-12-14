@@ -5,72 +5,26 @@ Recurrent Neural Network Layer
 Missing: LSTM, Recursive Gated, Language Models, Hierachical Softmax
 
 """
-from .layer import Layer, quadratic_form
+from .temporal_layer import TemporalLayer, quadratic_form
+from .layer import Layer
 import numpy as np
 REAL = np.float32
 
-class RecurrentLayer(Layer):
+class RecurrentLayer(TemporalLayer):
     """
     Recurrent Neural net layer with a linear activation,
     with backpropagation through time implemented
     for an error in the future.
     
     """
-    def __init__(self, *args, **kwargs):
-        self.step = 0
-        self._temporal_backward_layers = []
-        self._temporal_forward_layers  = []
-        Layer.__init__(self, *args, **kwargs)
-        # connect to self
-
-    def connect_to(self, layer, temporal = False, **kwargs):
-        if temporal:
-            self.connect_through_time(layer)
-        else:
-            Layer.connect_to(self, layer, **kwargs)
-
-    def connect_through_time(self, layer):
-        self._temporal_forward_layers.append(layer)
-        layer.add_temporal_backward_layer(self)
-
-    def add_temporal_backward_layer(self, layer):
-        self._temporal_backward_layers.append(layer)
-            
-    def activation(self):
-        return self._activation[self.step]
-
-    def allocate_activation(self, input):
-        print(self.__class__.__name__ + " is allocating memory for its activations.")
-        timesteps = input.shape[0]
-        self._activation = np.zeros([timesteps, input.shape[1], self.output_size] , dtype=self.dtype)
-
-    def allocate_temporal_forward_layers(self, input):
-        for layer in self._temporal_forward_layers:
-            layer.allocate_activation(input)
 
     def activate_timestep(self, input):
         if self.step < input.shape[0]:
             self.forward_propagate(input[self.step])
             self.step += 1
             for layer in self._temporal_forward_layers:
+                print("(%d) %s => %s" % (self.step, self.__class__.__name__, layer.__class__.__name__))
                 layer.activate_timestep(self._activation)
-            
-    def activate(self, input):
-        """
-        Activate a recurrent neural layer
-        by advancing a step for each of the
-        dimensions in the first axis of the
-        data.
-        """
-        # run net forward using input
-        self.allocate_activation(input)
-        self.allocate_temporal_forward_layers(input)
-
-        self.step = 0
-        self.activate_timestep(input)
-
-        # transfer activation as input to next layers:
-        self.activate_forward_layers()
             
     def layer_input(self):
         """
@@ -82,36 +36,19 @@ class RecurrentLayer(Layer):
            2. which stream (for batch training)
            3. dimensions of observation
         """
-        return self.prepare_timestep_input(self._backward_layers[0]._activation[self.step])
-        
-    def prepare_timestep_input(self, observation):
-        """
-        Concatenate previous hidden state with observable
-        """
-        
+        # what was given as an input:
+        observation = self._temporal_backward_layers[0]._activation[self.step]
+
         if self.step == 0:
             # repeat initial hidden state as many times as the data is observed
-            hidden = np.tile(self._initial_hidden_state, (observation.shape[0],1))
+            hidden = np.tile(self._initial_hidden_state, (observation.shape[0], 1))
         else:
             # previous hidden state is concatenated with the current observation:
-            hidden = self._temporal_backward_layers[0]._activation[self.step-1]
-          
+            hidden = self._activation[self.step-1]
         return np.concatenate([
                 hidden, # repeated hidden state
                 observation # timestep data observation
-                ], axis=-1)
-    
-    def clear(self):
-        """
-        Clears the activation and the local
-        error responsibility for this layer
-        """
-        self.step              = 0
-        self._activation       = None
-        self._dEdy             = None
-        self.dEdz              = None
-        self._weight_matrix_diff.fill(0)
-        self._bias_units_diff.fill(0)
+                ], axis=1)
         
     def create_weights(self):
         """
@@ -121,29 +58,20 @@ class RecurrentLayer(Layer):
             visible + hidden => hidden
             
         """
-        self._weight_matrix = self._random_weight_matrix()
-        self._weight_matrix_diff = np.zeros_like(self._weight_matrix)
-        
-        self._bias_units = self._random_bias_units()
-        self._bias_units_diff = np.zeros_like(self._bias_units)
+        Layer.create_weights(self)
         
         self._initial_hidden_state = self._zero_initial_state()
         self._initial_hidden_state_diff = np.zeros_like(self._initial_hidden_state)
         
-        self.params    = [self._weight_matrix, self._bias_units, self._initial_hidden_state]
-        self.gradients = [self._weight_matrix_diff, self._bias_units_diff, self._initial_hidden_state_diff]
-        
-    def _zero_initial_state(self):
-        return np.zeros(self.output_size, dtype=self.dtype)
+        self.params.append(self._initial_hidden_state)
+        self.gradients.append(self._initial_hidden_state_diff)
         
     def reset_weights(self):
         """
         Reset to random weights this
         layer
         """
-        self.clear()
-        self._weight_matrix += self._random_weight_matrix()
-        self._bias_units += self._random_bias_units()
+        Layer.reset_weights()
         self._initial_hidden_state.fill(0)
         
     def _random_weight_matrix(self):
@@ -180,17 +108,19 @@ class RecurrentLayer(Layer):
         activation ndarray : the activation for this input
         
         """
-        x = self.prepare_timestep_input(input)
+        t = self.step
+        hidden = self._activation[t-1] if t > 0 else np.tile(self._initial_hidden_state, (input.shape[0], 1))
+        x = np.concatenate([hidden, input], axis=1)
         if self.tensor:
-            self._activation[self.step] = self.activation_function(
+            self._activation[t] = self.activation_function(
                 quadratic_form(self._weight_tensor, x) +
-                np.dot(x, self._weight_matrix.T) +
+                np.dot(self._weight_matrix, x.T).T +
                 self._bias_units )
         else:
-            self._activation[self.step] = self.activation_function(
-                np.dot(x, self._weight_matrix.T) +
+            self._activation[t] = self.activation_function(
+                np.dot(self._weight_matrix, x.T).T +
                 self._bias_units )
-        return self._activation[self.step]
+        return self._activation[t]
 
     def backpropagate(self, signal):
         """

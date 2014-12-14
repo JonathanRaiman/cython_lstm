@@ -1,5 +1,5 @@
 from .recurrent_layer import RecurrentLayer, REAL
-
+import numpy as np
 
 class RecurrentAveragingLayer(RecurrentLayer):
 
@@ -10,25 +10,28 @@ class RecurrentAveragingLayer(RecurrentLayer):
         self.step = 0
         self._temporal_backward_layers = []
         self._temporal_forward_layers  = []
-
-        self.params           = []
-        self.gradients        = []
+        
         self._backward_layers = []
         self._forward_layers  = []
         self.input_size       = bc_layer.output_size
-        self.output_size      = self.input_size
+        self.output_size      = bc_layer.output_size
 
-        # order these are added matters (unfortunately)
-        a_layer.connect_to(self, temporal = True)
-        bc_layer.connect_to(self, temporal = True)
         self._a_layer         = a_layer
         self._bc_layer        = bc_layer
         self._activation      = None
         self.tensor           = False
         self.dtype            = dtype
+        self.create_weights()
 
-    def prepare_timestep_input(self, input):
-        return input
+    def create_weights(self):
+        self.params           = []
+        self.gradients        = []
+
+        self._initial_hidden_state = self._zero_initial_state()
+        self._initial_hidden_state_diff = np.zeros_like(self._initial_hidden_state)
+        
+        self.params.append(self._initial_hidden_state)
+        self.gradients.append(self._initial_hidden_state_diff)
 
     def backpropagate_one_step(self, signal):
         """
@@ -58,11 +61,10 @@ class RecurrentAveragingLayer(RecurrentLayer):
         out = a * b + (1 - a) * c
         """
         t = self.step
-        past = self._bc_layer._activation[t-1] if t > 0 else self._bc_layer._initial_hidden_state
-        
+        hidden = self._activation[t-1] if t > 0 else np.tile(self._initial_hidden_state, (input.shape[0], 1))
         self._activation[t] = (
-                self._a_layer._activation[t] * self._bc_layer._activation[t] +
-            (1-self._a_layer._activation[t]) * past)
+                self._a_layer._activation[t] * input +
+            (1-self._a_layer._activation[t]) * hidden)
         return self._activation[t]
 
     def error_activate(self, target):
