@@ -4,6 +4,18 @@ class BaseLayer(object):
         self._forward_layers     = []
         self._backward_layers    = []
 
+    def allocate_activation(self, timesteps, streams):
+        """
+        Each layer must handle temporal memory allocation
+        based on its needs. e.g. certain layers are memory
+        less and they do not need to store their
+        activations to compute a gradient, while others
+        need to, like a Dropout layer that masks the input
+        in a unique way each time.
+
+        """
+        raise NotImplementedError()
+
     def _connect_layer(self, layer):
         """
         Adds the layer to the forward and

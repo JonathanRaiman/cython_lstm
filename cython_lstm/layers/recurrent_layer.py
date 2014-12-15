@@ -23,7 +23,7 @@ class RecurrentLayer(TemporalLayer):
             self.forward_propagate(input[self.step])
             self.step += 1
             for layer in self._temporal_forward_layers:
-                print("(%d) %s => %s" % (self.step, self.__class__.__name__, layer.__class__.__name__))
+                #print("(%d) %s => %s" % (self.step, self.__class__.__name__, layer.__class__.__name__))
                 layer.activate_timestep(self._activation)
             
     def layer_input(self):
