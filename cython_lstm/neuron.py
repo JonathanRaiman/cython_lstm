@@ -68,7 +68,7 @@ class LogisticNeuron(Neuron):
         Binary Cross entropy error:
         D_{KL}(p || q) = sum_i { (1-p_i) * log(1 - q_i) -p_i log (q_i) }
         """
-        return -(target * np.log(y) + (1.0 - target) * np.log(1.0 - y))
+        return -(target * np.log(y) + (1.0 - target) * np.log1p(-y))
     
 class TanhNeuron(Neuron):
     @staticmethod
@@ -92,7 +92,7 @@ class TanhNeuron(Neuron):
         
         """
         resized_activation = (y + 1.0) / 2.0
-        return -(target * np.log(resized_activation) + (1.0 - target) * np.log(1.0 - resized_activation))
+        return -(target * np.log(resized_activation) + (1.0 - target) * np.log1p(- resized_activation))
     
 class SoftmaxNeuron(Neuron):
     @staticmethod

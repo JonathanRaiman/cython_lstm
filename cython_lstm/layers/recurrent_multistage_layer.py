@@ -15,7 +15,6 @@ class RecurrentMultiStageLayer(RecurrentLayer):
 
         self.step = 0
 
-        self._temporal_backward_layers = []
         self._temporal_forward_layers  = []
         
         self.dtype            = dtype
@@ -23,7 +22,7 @@ class RecurrentMultiStageLayer(RecurrentLayer):
         self.dEdz             = None
         self.tensor           = False
         self._forward_layers  = []
-        self._backward_layers = []
+        self._backward_layer  = None
         
         self._internal_layers = layers
         self._output_layer    = self._internal_layers[-1]
@@ -64,7 +63,7 @@ class RecurrentMultiStageLayer(RecurrentLayer):
             layer.activate(self.activation())
 
     def layer_input(self):
-        return self._backward_layers[0]._activation[self.step]
+        return self._backward_layer._activation[self.step]
 
     def error_activate(self, target):
         raise NotImplementedError("Not implemented")
@@ -77,8 +76,7 @@ class RecurrentMultiStageLayer(RecurrentLayer):
         # within backpropagate
         if self.step == -1:
             self.step = 0
-            for layer in self._backward_layers:
-                self.backpropagate(self.dEdz)
+            self._backward_layer.backpropagate(self.dEdz)
         else:
             for layer in reversed(self._internal_layers):
                 layer.backpropagate_one_step(signal)

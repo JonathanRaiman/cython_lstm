@@ -37,7 +37,7 @@ class RecurrentLayer(TemporalLayer):
            3. dimensions of observation
         """
         # what was given as an input:
-        observation = self._temporal_backward_layers[0]._activation[self.step]
+        observation = self._backward_layer._activation[self.step]
 
         if self.step == 0:
             # repeat initial hidden state as many times as the data is observed
@@ -137,8 +137,7 @@ class RecurrentLayer(TemporalLayer):
             # reset step:
             self.step = 0
             
-            for layer in self._backward_layers:
-                layer.backpropagate(self.dEdz)
+            self._backward_layer.backpropagate(self.dEdz)
         else:
             # signal backwards is given by taking weight matrix
             # with signal with derivative

@@ -22,7 +22,6 @@ class TemporalLayer(Layer):
     
     """
     def __init__(self, *args, **kwargs):
-        self._temporal_backward_layers = []
         self._temporal_forward_layers  = []
         Layer.__init__(self, *args, **kwargs)
         # connect to self
@@ -35,10 +34,7 @@ class TemporalLayer(Layer):
 
     def connect_through_time(self, layer):
         self._temporal_forward_layers.append(layer)
-        layer.add_temporal_backward_layer(self)
-
-    def add_temporal_backward_layer(self, layer):
-        self._temporal_backward_layers.append(layer)
+        layer.add_backward_layer(self)
             
     def activation(self):
         return self._activation[self.step]
@@ -71,6 +67,7 @@ class TemporalLayer(Layer):
 
         self.step = 0
         self.recursive_activate_timestep(input)
+        self.step -= 1
 
         # transfer activation as input to next layers:
         self.activate_forward_layers()
@@ -81,7 +78,7 @@ class TemporalLayer(Layer):
         layers.
 
         """
-        return self._temporal_backward_layers[0]._activation[self.step]
+        return self._backward_layer._activation[self.step]
     
     def forward_propagate(self, x):
         """
@@ -123,8 +120,7 @@ class TemporalLayer(Layer):
             # reset step:
             self.step = 0
             
-            for layer in self._backward_layers:
-                layer.backpropagate(self.dEdz)
+            self._backward_layer.backpropagate(self.dEdz)
         else:
             # signal backwards is given by taking weight matrix
             # with signal with derivative

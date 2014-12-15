@@ -11,7 +11,6 @@ class TileLayer(BaseLayer):
         BaseLayer.__init__(self)
 
         self._temporal_forward_layers = []
-        self._temporal_backward_layers = []
 
         self._activation = None
 

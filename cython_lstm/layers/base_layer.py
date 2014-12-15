@@ -1,8 +1,8 @@
 class BaseLayer(object):
 
     def __init__(self):
-        self._forward_layers     = []
-        self._backward_layers    = []
+        self._forward_layers  = []
+        self._backward_layer  = None
 
     def allocate_activation(self, timesteps, streams):
         """
@@ -34,10 +34,16 @@ class BaseLayer(object):
         Connect a layer to the antecedents
         of this layer in the graph.
         """
-        self._backward_layers.append(layer)
+        if self._backward_layer is not None:
+            self._backward_layer.remove_forward_layer(self)
+        self._backward_layer = layer
+
+    def remove_forward_layer(self, layer):
+        self._forward_layers.remove(layer)
         
     def remove_backward_layer(self, layer):
-        self._backward_layers.remove(layer)
+        if self._backward_layer is layer:
+            self._backward_layer = None
 
     def connect_to(self, layer, temporal = False, trust = False):
         """
@@ -61,7 +67,7 @@ class BaseLayer(object):
 
     def connect_through_time(self, layer):
         self._temporal_forward_layers.append(layer)
-        layer.add_temporal_backward_layer(self)
+        layer.add_backward_layer(self)
 
     def __repr__(self):
         return "<" + self.__class__.__name__ + " " + str({"activation": self.activation_function.__doc__ if hasattr(self, 'activation_function') else '', "input_size": self.input_size, "output_size": self.output_size})+">"

@@ -111,18 +111,14 @@ class Layer(BaseLayer):
         self.backpropagate_dEdy()
         
         # Send dEdz backwards as new error signal
-        for layer in self._backward_layers:
-            layer.backpropagate(self.dEdz)
+        self._backward_layer.backpropagate(self.dEdz)
         
     def layer_input(self):
         """
         Input is sum of activations of backward
         layers.
         """
-        if len(self._backward_layers) > 1:
-            return sum(layer.activation() for layer in self._backward_layers)
-        else:
-            return self._backward_layers[0].activation()
+        return self._backward_layer.activation()
         
     def activation(self):
         return self._activation

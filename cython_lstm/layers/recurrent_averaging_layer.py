@@ -8,10 +8,9 @@ class RecurrentAveragingLayer(RecurrentLayer):
         Strange layer used for multi stage recurrence.
         """
         self.step = 0
-        self._temporal_backward_layers = []
-        self._temporal_forward_layers  = []
+        self._temporal_forward_layers = []
         
-        self._backward_layers = []
+        self._backward_layer  = None
         self._forward_layers  = []
         self.input_size       = bc_layer.output_size
         self.output_size      = bc_layer.output_size
