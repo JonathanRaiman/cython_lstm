@@ -1,11 +1,10 @@
 import numpy as np
-REAL = np.float32
 
 class Network():
     """
     Create a simple neural network
     """
-    def __init__(self, dtype=REAL):
+    def __init__(self, dtype=np.float32):
         self.dtype = dtype
         self.layers = []
         self._output_layer = None
@@ -35,14 +34,22 @@ class Network():
 
     def allocate_activation(self, timesteps, streams):
         for layer in self.layers:
-            layer.allocate_activation(timesteps, streams)
+            if hasattr(layer, 'allocate_activation'):
+                layer.allocate_activation(timesteps, streams)
         
     def activate(self, input):
         input = np.asarray(input, dtype=self.dtype)
         if input.ndim == 1:
             input = input.reshape(1,-1)
+        # deprecated method:
         self.allocate_activation(input.shape[0], input.shape[1])
-        self._data_layer.activate(input)
+        # activate first layer
+        last_layer = self._data_layer
+        out = input
+        while last_layer is not None:
+            out = last_layer.activate([out])
+            last_layer = last_layer._forward_layer
+        
         return self._output_layer._activation
         
     def backpropagate(self, target):
@@ -50,10 +57,33 @@ class Network():
             target = np.asarray(target, dtype=self.dtype)
             if target.ndim == 1:
                 target = target.reshape(1,-1)
-        self._output_layer.error_activate(target)
+        if hasattr(self._output_layer, 'error_activate'):
+            self._output_layer.error_activate(target)
+        else:
+            self.manual_backpropagation(target)
+
+
+    def manual_backpropagation(self, target):
+        last_layer = self._output_layer
+        # special error is used here to initialize the backpropagation
+        # procedure
+        error_signal = last_layer.dEdy(last_layer._activation, target)
+        # now transition to the layer before this one:
+        last_layer = last_layer._backward_layer
+        while last_layer is not None and last_layer is not self._data_layer:
+            # we pass down the current error signal
+            error_signal = last_layer.update_grad_input(
+                last_layer._backward_layer._activation,
+                last_layer._activation,
+                error_signal)
+            # step down by a layer.
+            last_layer = last_layer._backward_layer
+
+
+
         
     def error(self, target):
-        return self._output_layer.error(self._output_layer.activation(), target)
+        return self._output_layer.error(self._output_layer._activation, target)
         
     def clear(self):
         """
@@ -98,8 +128,13 @@ class DataLayer():
         self._forward_layer = None
         
     def activate(self, input):
-        self._activation = input
-        self._forward_layer.activate(self._activation)
+        self._activation = input[0]
+        return self._activation
+
+        #self._forward_layer.activate(self._activation)
+
+        # then tell this layer to get a move on.
+        #self._forward_layer.activate_forward()
         
     def activation(self):
         return self._activation

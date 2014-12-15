@@ -7,19 +7,20 @@ class RecurrentAveragingLayer(RecurrentLayer):
         """
         Strange layer used for multi stage recurrence.
         """
-        self.step = 0
+        self.step                     = 0
         self._temporal_forward_layers = []
         
-        self._backward_layer  = None
-        self._forward_layers  = []
-        self.input_size       = bc_layer.output_size
-        self.output_size      = bc_layer.output_size
-
-        self._a_layer         = a_layer
-        self._bc_layer        = bc_layer
-        self._activation      = None
-        self.tensor           = False
-        self.dtype            = dtype
+        self.dimensionless            = False
+        self._backward_layer          = None
+        self._forward_layers          = []
+        self.input_size               = bc_layer.output_size
+        self.output_size              = bc_layer.output_size
+        
+        self._a_layer                 = a_layer
+        self._bc_layer                = bc_layer
+        self._activation              = None
+        self.tensor                   = False
+        self.dtype                    = dtype
         self.create_weights()
 
     def create_weights(self):

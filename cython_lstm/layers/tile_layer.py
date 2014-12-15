@@ -7,13 +7,6 @@ class TileLayer(BaseLayer):
     to multiple nodes that need to listen to it.
     """
 
-    def __init__(self):
-        BaseLayer.__init__(self)
-
-        self._temporal_forward_layers = []
-
-        self._activation = None
-
     def forward_propagate(self, x):
         return [layer.forward_propagate(x) for layer in self._temporal_forward_layers]
 

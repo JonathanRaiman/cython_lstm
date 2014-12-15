@@ -1,13 +1,24 @@
 import numpy as np
+try:
+    import scipy.special
+    sigmoid = scipy.special.expit
+except ImportError:
+    def sigmoid(x, out=None):
+        """
+        Sigmoid implemented using proxy
+        ufuncs from numpy.
+        """
+        return np.divide(1., 1. + np.exp(-x), out, dtype=x.dtype)
 
-def sigmoid(x):
-    return 1. / (1. + np.exp(-x))
-
-def softmax(x):
+def softmax(x, out=None):
     layer_max = x.max(axis=-1)
     exped_distributions = np.exp(x.T - layer_max)
     total_distribution = exped_distributions.sum(axis=0)
-    return (exped_distributions / total_distribution).T
+    if out is None:
+        return (exped_distributions / total_distribution).T
+    else:
+        out[:] = (exped_distributions / total_distribution).T
+        return out
 
 def softmax_unsafe(x):
     exped_distributions = np.exp(x.T)
@@ -19,9 +30,13 @@ def softmax_error_one_hot(x, t):
 
 class Neuron():
     @staticmethod
-    def activation_function(x):
+    def activation_function(x, out=None):
         """Identity"""
-        return x
+        if out is None:
+            return x
+        else:
+            out[:] = x
+            return out
     
     @staticmethod
     def dydz(x):
@@ -40,9 +55,9 @@ class Neuron():
 
 class RectifierNeuron(Neuron):
     @staticmethod
-    def activation_function(x):
+    def activation_function(x, out=None):
         """Rectifier"""
-        return np.fmax(0,x)
+        return np.fmax(0,x, out)
     
     @staticmethod
     def dydz(x):
@@ -50,9 +65,9 @@ class RectifierNeuron(Neuron):
     
 class LogisticNeuron(Neuron):
     @staticmethod
-    def activation_function(x):
+    def activation_function(x, out=None):
         """Sigmoid"""
-        return sigmoid(x)
+        return sigmoid(x,out)
     
     @staticmethod
     def dydz(x):
@@ -72,9 +87,9 @@ class LogisticNeuron(Neuron):
     
 class TanhNeuron(Neuron):
     @staticmethod
-    def activation_function(x):
+    def activation_function(x, out=None):
         """Tanh"""
-        return np.tanh(x)
+        return np.tanh(x, out)
     
     @staticmethod
     def dydz(x):
@@ -96,9 +111,9 @@ class TanhNeuron(Neuron):
     
 class SoftmaxNeuron(Neuron):
     @staticmethod
-    def activation_function(x):
+    def activation_function(x, out=None):
         """Softmax"""
-        return softmax(x)
+        return softmax(x, out)
 
     @staticmethod
     def dEdy(y, t):

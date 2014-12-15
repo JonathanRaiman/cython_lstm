@@ -32,6 +32,7 @@ class Layer(BaseLayer):
                  dtype=REAL):
         BaseLayer.__init__(self)
         
+        self.dimensionless       = False
         self.step                = 0
         self.dtype               = dtype
         self.activation_function = neuron.activation_function
@@ -45,7 +46,6 @@ class Layer(BaseLayer):
         
         self.tensor              = tensor
         
-        self._activation         = None
         self._dEdy               = None
         self.dEdz                = None
         

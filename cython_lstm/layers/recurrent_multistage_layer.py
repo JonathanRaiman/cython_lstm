@@ -12,10 +12,6 @@ class RecurrentMultiStageLayer(RecurrentLayer):
     """
 
     def __init__(self, layers, dtype=REAL):
-
-        self.step = 0
-
-        self._temporal_forward_layers  = []
         
         self.dtype            = dtype
         self._dEdy            = None

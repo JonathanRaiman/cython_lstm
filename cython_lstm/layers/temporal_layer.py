@@ -21,10 +21,6 @@ class TemporalLayer(Layer):
     for an error in the future, and no hidden activation.
     
     """
-    def __init__(self, *args, **kwargs):
-        self._temporal_forward_layers  = []
-        Layer.__init__(self, *args, **kwargs)
-        # connect to self
 
     def connect_to(self, layer, temporal = False, **kwargs):
         if temporal:
@@ -70,6 +66,7 @@ class TemporalLayer(Layer):
         self.step -= 1
 
         # transfer activation as input to next layers:
+        print("Activating forward layers from %s" % (self.__class__.__name__,))
         self.activate_forward_layers()
             
     def layer_input(self):
