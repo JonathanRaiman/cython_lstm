@@ -64,6 +64,9 @@ class Layer(BaseLayer):
         self.forward_propagate(input)
         # transfer activation as input to next layers:
         self.activate_forward_layers()
+
+    def allocate_activation(self, timesteps, streams):
+        pass
         
     def backpropagate_dEdy(self):
         """
