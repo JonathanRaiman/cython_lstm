@@ -10,9 +10,7 @@ class ActivationLayer(BaseLayer):
     def __init__(self, neuron):
         BaseLayer.__init__(self)
         self.activation_function = neuron.activation_function
-        self.error               = neuron.error
         self.dydz                = neuron.dydz
-        self.dEdy                = neuron.dEdy
         self.gradients           = []
 
     def activate(self, x, out=None):

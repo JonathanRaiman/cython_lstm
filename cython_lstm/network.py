@@ -1,12 +1,15 @@
 import numpy as np
+from .error import MSE
 
 class Network():
     """
     Create a simple neural network
     """
-    def __init__(self, dtype=np.float32):
+    def __init__(self, metric = MSE, dtype=np.float32):
         self.dtype = dtype
         self.layers = []
+        assert(hasattr(metric, 'error') and hasattr(metric, 'dEdy')), "Metric must implement error and error derivative."
+        self.error_metric = metric
         self._output_layer = None
         self._input_layer = None
         self._data_layer = DataLayer()
@@ -67,9 +70,7 @@ class Network():
         last_layer = self._output_layer
         # special error is used here to initialize the backpropagation
         # procedure
-        error_signal = last_layer.dEdy(last_layer._activation, target)
-        # now transition to the layer before this one:
-        last_layer = last_layer._backward_layer
+        error_signal = self.error_metric.dEdy(last_layer._activation, target)
         while last_layer is not None and last_layer is not self._data_layer:
             # we pass down the current error signal
             error_signal = last_layer.update_grad_input(
@@ -79,11 +80,20 @@ class Network():
             # step down by a layer.
             last_layer = last_layer._backward_layer
 
-
-
+    def set_error(self, metric):
+        """
+        Set the error metric that should
+        be used. The choices are:
+            * MSE
+            * BinaryCrossEntropy
+            * TanhBinayCrossEntropy
+            * CategoricalCrossEntropy
+        """
+        assert(hasattr(metric, 'error') and hasattr(metric, 'dEdy')), "Metric must implement error and error derivative."
+        self.error_metric = metric
         
     def error(self, target):
-        return self._output_layer.error(self._output_layer._activation, target)
+        return self.error_metric.error(self._output_layer._activation, target)
         
     def clear(self):
         """

@@ -19,7 +19,6 @@ class TemporalLayer(Layer):
     Recurrent Neural net layer with a linear activation,
     with backpropagation through time implemented
     for an error in the future, and no hidden activation.
-    
     """
 
     def connect_to(self, layer, temporal = False, **kwargs):
@@ -58,9 +57,7 @@ class TemporalLayer(Layer):
         by advancing a step for each of the
         dimensions in the first axis of the
         data.
-
         """
-
         self.step = 0
         self.recursive_activate_timestep(input)
         self.step -= 1
@@ -116,7 +113,6 @@ class TemporalLayer(Layer):
         if self.step == -1:
             # reset step:
             self.step = 0
-            
             self._backward_layer.backpropagate(self.dEdz)
         else:
             # signal backwards is given by taking weight matrix
@@ -129,7 +125,6 @@ class TemporalLayer(Layer):
             # constitute the local error responsability dEdz
             # and mark the updates to the weights:
             self.backpropagate_dEdy()
-            
             self.step -=1
             
             return self.backpropagate(self.dEdz)

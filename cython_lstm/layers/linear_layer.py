@@ -66,7 +66,6 @@ class LinearLayer(BaseLayer):
         self.bias_units = self.random_bias_units()
         self.bias_units_diff = np.zeros_like(self.bias_units)
         
-        
         self.params    = [self.weight_matrix, self.bias_units]
         self.gradients = [self.weight_matrix_diff, self.bias_units_diff]
         
@@ -132,7 +131,6 @@ class LinearLayer(BaseLayer):
         """
         if self.gradinput is None:
             self.gradinput = np.zeros_like(input)
-
         self.gradinput += np.dot(grad_output, self.weight_matrix)
         
         # updates to weight matrix are given by outer
