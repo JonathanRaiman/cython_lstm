@@ -20,9 +20,7 @@ class LoopLayer(BaseLayer):
     def clear(self):
         self.gradinput = None
         for layer in self.layers:
-            layer.gradinput = None
-        for grad in self.gradients:
-            grad.fill(0)
+            layer.clear()
 
     def activation_holder(self, timesteps, streams):
         """
@@ -71,6 +69,22 @@ class LoopLayer(BaseLayer):
                 input = layer.activate([input], out = holder[t])
         return out
 
+    def reset_internal_gradient_cache(self):
+        """
+        Reset gradient input to the layers inside
+        the loop, thereby simulating the unfolding
+        through time of the layers (each layer 
+        is thereby unique to each time point
+        with regard to its gradient cache).
+        """
+        for layer in self.layers:
+            # in theory memory allocation
+            # could be saved here,
+            # be np dot erases the output
+            # destination
+            layer.gradinput = None
+
+
     def update_grad_input(self, input, output, grad_output):
         """
         Here we take the gradient with respect to all time points. The error
@@ -88,7 +102,11 @@ class LoopLayer(BaseLayer):
                     grad_down = layer.update_grad_input(layer_in[t], out[t], grad[t])
                 else:
                     grad_down = layer.update_grad_input(layer_in[t], out[t], grad[t] + grad_down)
-
+            # next we clear the grad
+            # input at this level,
+            # since for each timestep
+            # the layers are unique.
+            self.reset_internal_gradient_cache()
             self.gradinput[t] = grad_down
 
         return self.gradinput
