@@ -43,4 +43,4 @@ class BaseLayer(ConnectibleLayer):
             layer.activate_forward_layers()
 
     def __repr__(self):
-        return "<" + self.__class__.__name__ + " " + str({"activation": self.activation_function.__doc__ if hasattr(self, 'activation_function') else '', "input_size": self.input_size, "output_size": self.output_size})+">"
+        return "<" + self.__class__.__name__ + " " + str({"activation": self.activation_function.__doc__ if hasattr(self, 'activation_function') else '', "input_size": self.input_size if hasattr(self, 'input_size') else '', "output_size": self.output_size if hasattr(self, 'output_size') else ''})+">"
