@@ -73,7 +73,7 @@ class Trainer():
 
     def sgd_update(self):
         for gparam, param in zip(self.gradients, self.parameters):
-            param -= (self._alpha * gparam)
+            param -= (self.lr * gparam)
 
 
     def train(self, input, output):
