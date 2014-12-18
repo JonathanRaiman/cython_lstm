@@ -25,7 +25,7 @@ class BinaryCrossEntropy(MSE):
         Binary Cross entropy error:
         D_{KL}(p || q) = sum_i { (1-p_i) * log(1 - q_i) -p_i log (q_i) }
         """
-        return -(target * np.log(y) + (1.0 - target) * np.log1p(-y))
+        return -(target * np.log(y) + (1.0 - target) * np.log1p(-y.clip(max=0.99999999)))
 
 class TanhBinayCrossEntropy(MSE):
     @staticmethod
