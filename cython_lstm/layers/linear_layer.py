@@ -130,8 +130,9 @@ class LinearLayer(BaseLayer):
         backpropagation.
         """
         if self.gradinput is None:
-            self.gradinput = np.zeros_like(input)
-        self.gradinput += np.dot(grad_output, self.weight_matrix)
+            self.gradinput = np.dot(grad_output, self.weight_matrix)
+        else:
+            self.gradinput += np.dot(grad_output, self.weight_matrix)
         
         # updates to weight matrix are given by outer
         # product of signal with input:
