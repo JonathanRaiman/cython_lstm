@@ -12,6 +12,8 @@ class ConnectibleLayer(object):
 
     """
     def __init__(self):
+        self.parents = []
+        self.children = []
         self._forward_layer  = None
         self._backward_layer = None
 
@@ -21,7 +23,23 @@ class ConnectibleLayer(object):
         of this layer in the graph.
         """
         if self._backward_layer is not None: self._backward_layer.remove_forward_layer(self)
+        self.parents.append(layer)
         self._backward_layer = layer
+
+    def __sub__(self, layer):
+        from .element_wise import ElementWiseSum
+        result = ElementWiseSum(self, layer, -1)
+        return result
+
+    def __mul__(self, layer):
+        from .element_wise import ElementWiseProd
+        result = ElementWiseProd(self, layer)
+        return result
+
+    def __add__(self, layer):
+        from .element_wise import ElementWiseSum
+        result = ElementWiseSum(self, layer)
+        return result
 
     def remove_forward_layer(self, layer):
         """
@@ -45,5 +63,6 @@ class ConnectibleLayer(object):
         backward lists of layers to connect
         the graph.
         """
+        self.children.append(layer)
         self._forward_layer = layer
         layer.add_backward_layer(self)
