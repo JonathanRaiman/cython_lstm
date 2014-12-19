@@ -27,7 +27,7 @@ class ActivationLayer(BaseLayer):
 
     def update_grad_input(self, input, output, grad_output):
         """
-        here we take the neuron's update method for the gradient
+        Here we take the neuron's update method for the gradient
         which is usually a function of its output.
         this is a form of code smell, but for a neural network
         module this is habitutal

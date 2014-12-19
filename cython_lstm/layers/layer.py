@@ -2,6 +2,8 @@
 Neural Network Layer
 --------------------
 
+Note: Deprecated !
+
 Missing: Dropout, Language Models, Hierachical Softmax
 
 Note: it appears that Dropout is a weightless layer.
