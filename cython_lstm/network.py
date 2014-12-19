@@ -1,5 +1,7 @@
 import numpy as np
 from .error import MSE
+from .layers.connectible_layer import ConnectibleLayer
+from .topology import topological_sort, Node
 
 class Network():
     """
@@ -27,8 +29,9 @@ class Network():
             if self._data_layer._forward_layer is not None:
                 self._data_layer._forward_layer.remove_backward_layer(self._data_layer)
             
-            self._data_layer._forward_layer = layer
-            layer.add_backward_layer(self._data_layer)
+            self._data_layer.connect_to(layer)
+            # self._data_layer.children.append(layer)
+            # layer.add_backward_layer(self._data_layer)
         if output:
             self._output_layer = layer
         
@@ -41,6 +44,15 @@ class Network():
                 layer.allocate_activation(timesteps, streams)
         
     def activate(self, input):
+        """
+        Activate takes the input to the network
+        and dispatches it forward starting from
+        the data layer (the lowest input).
+
+        Note: in the future this activation procedure
+        will instead rely on the topological sort of the
+        nodes in graph, and multiple inputs will be usable.
+        """
         input = np.asarray(input, dtype=self.dtype)
         if input.ndim == 1:
             input = input.reshape(1,-1)
@@ -54,6 +66,18 @@ class Network():
             last_layer = last_layer._forward_layer
         
         return self._output_layer._activation
+
+    def topsort(self):
+        """
+        Return the input layers to the network (the
+        data layers) and use those as roots for a
+        topological sort of the network.
+        """
+        mapping = Node.to_layer_mapping([self._data_layer])
+        roots = [value
+            for key, value in mapping.items()
+            if isinstance(key, DataLayer)]
+        return topological_sort(roots)
         
     def backpropagate(self, target):
         if not target.dtype.kind == 'i':
@@ -128,12 +152,14 @@ class Network():
         else:
             return str({
         "layers": self.layers,
-        "output_layer": self._output_layer.activation_function.__doc__,
-        "input_layer": self._input_layer.activation_function.__doc__
+        "output_layer": self._output_layer.activation_function.__doc__ if hasattr(self._output_layer, 'activation_function') else '',
+        "input_layer": self._input_layer.activation_function.__doc__ if hasattr(self._input_layer, 'activation_function') else ''
             })
 
-class DataLayer():
+class DataLayer(ConnectibleLayer):
     def __init__(self):
+        self.parents = []
+        self.children = []
         self._activation = None
         self._forward_layer = None
         
@@ -141,19 +167,8 @@ class DataLayer():
         self._activation = input[0]
         return self._activation
 
-        #self._forward_layer.activate(self._activation)
-
-        # then tell this layer to get a move on.
-        #self._forward_layer.activate_forward()
-        
     def activation(self):
         return self._activation
         
     def backpropagate(self, signal):
-        """
-        Backpropagating through data layer
-        may be useful for language models,
-        but for fixed dataset this is not
-        meaningful.
-        """
         pass
